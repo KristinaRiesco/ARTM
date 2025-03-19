@@ -19,6 +19,14 @@ class RegisterPage(QWidget):
         title_label.setObjectName("RegisterTitle")
         layout.addWidget(title_label, alignment=Qt.AlignCenter)
 
+        #Username input for registration
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Username")
+        self.username_input.setFixedWidth(300)
+        self.username_input.setObjectName("RegisterField")
+        layout.addWidget(self.username_input, alignment=Qt.AlignCenter)
+
+
         # Email input
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("Email")
@@ -60,15 +68,20 @@ class RegisterPage(QWidget):
 
     def attempt_register(self):
         import requests
+        username = self.username_input.text()
         email = self.email_input.text()
         password = self.password_input.text()
 
+        if not username or not email or not password:
+            QMessageBox(self, "Error", "All fields are required!")
+            return
+
         response = requests.post(
             "http://127.0.0.1:5000/users/register",
-            json={"email": email, "password": password}
+            json={"username": username, "email": email, "password": password}
         )
 
-        if response.status_code == 200:
+        if response.status_code == 201:
             QMessageBox.information(self, "Success", "Registration successful!")
         else:
             QMessageBox.warning(self, "Error", "Registration failed.")
