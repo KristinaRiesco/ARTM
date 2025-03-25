@@ -5,8 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5ad9c613-9f52-4acb-8806-e8a794cb4b48" name="Changes" comment="version 2.1.0">
+      <change beforePath="$PROJECT_DIR$/.idea/ARTM.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/ARTM.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ARTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/ARTM.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/site.db" beforeDir="false" afterPath="$PROJECT_DIR$/backend/site.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/Gesture_Capture_Page.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/Gesture_Capture_Page.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/gesture_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/gesture_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,8 +40,8 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/KrisRicos/ARTM.git&quot;,
-    &quot;accountId&quot;: &quot;f5098278-0382-4e99-af1e-85fe3a91f241&quot;
+    &quot;url&quot;: &quot;https://github.com/talarekc/ARTM.git&quot;,
+    &quot;accountId&quot;: &quot;a65d1c55-c378-4335-ab23-d8885e5487e4&quot;
   }
 }</component>
   <component name="ProjectColorInfo">{
@@ -126,7 +131,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-d7ad00fb9fc3-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.23726.102" />
+        <option value="bundled-python-sdk-a5bc9544c897-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.23654.177" />
       </set>
     </attachedChunks>
   </component>

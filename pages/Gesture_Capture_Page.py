@@ -1,15 +1,11 @@
 import cv2
-import sys
-import time
-import numpy as np
 import mediapipe as mp
-import requests
-import webbrowser
-
+import time
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QApplication, QSizePolicy
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import QTimer, Qt
 
+#Import gesture detection functions from gesture_utils.py
 from gesture_utils import (
     detect_peace_sign,
     detect_thumbs_up,
@@ -19,6 +15,7 @@ from gesture_utils import (
     detect_letter_l
 )
 
+
 class GestureCapturePage(QWidget):
     def __init__(self):
         super().__init__()
@@ -26,219 +23,144 @@ class GestureCapturePage(QWidget):
         # Set up the page layout
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
-        self.google_opened = False  # Flag to track if Google has been opened
 
         # Create and configure the QLabel for video feed
         self.video_label = QLabel()
         self.video_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.video_label.setAlignment(Qt.AlignCenter)
-        self.video_label.setScaledContents(True)  # Enable dynamic resizing
+        self.video_label.setScaledContents(True)
         self.layout.addWidget(self.video_label)
 
-        # QLabel for gesture detection status
+        # Status Label
         self.status_label = QLabel("Gesture detection in progress...")
         self.layout.addWidget(self.status_label)
 
-        self.countdown_label = QLabel("")
-        self.layout.addWidget(self.countdown_label)
-
-        # Initialize video capture
-        self.cap = cv2.VideoCapture(0)
-
-        # Set up a QTimer to update the video feed
-        self.timer = QTimer()
+        # Timer for updating video feed
+        self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
-        self.timer.start(30)  # Check if 30ms is too frequent
 
         # Initialize MediaPipe Hands class
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
-            max_num_hands=1,  # Detect only one hand
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
+            max_num_hands=1,
+            min_detection_confidence=0.7,  # Higher confidence threshold for better accuracy
+            min_tracking_confidence=0.7
         )
-
-        # Initialize MediaPipe drawing utils
         self.mp_drawing = mp.solutions.drawing_utils
 
-        # Initialize gesture timers
-        self.gesture_timers = {
-            'Peace Sign': 0,
-            'Thumbs Up': 0,
-            'Index Up': 0,
-            'Rock and Roll Salute': 0,
-            'Fist': 0,
-            'L Sign': 0
-        }
+        self.cap = None  # Camera will be initialized in start_camera()
 
-        self.gesture_flags = {
-            'Peace Sign': False,
-            'Thumbs Up': False,
-            'Index Up': False,
-            'Rock and Roll Salute': False,
-            'Fist': False,
-            'L Sign': False
-        }
+        # Gesture Timers (to confirm a gesture after 1.5 seconds)
+        self.gesture_timers = {}
+        self.REQUIRED_HOLD_TIME = 1.5  # Time (seconds) a gesture must be held
+        self.COOLDOWN_TIME = 3  # Time (seconds) before detecting another gesture
 
-        self.gesture_map = {
-            "Peace Sign": detect_peace_sign,
-            "Thumbs Up": detect_thumbs_up,
-            "Index Up": detect_index_up,
-            "Rock and Roll Salute": detect_rock_and_roll_salute,
-            "Fist": detect_fist,
-            "L Sign": detect_letter_l,
-        }
+        #Flags to prevent repeated detections
+        self.gesture_detected = False
+        self.last_detected_time = 0
 
-        self.GESTURE_DETECTION_TIME = 1.0  # 1 second
+    def start_camera(self):
+        """ Initializes and starts the camera when the page is shown. """
+        if self.cap is not None:
+            self.stop_camera()
 
-
-    # command to send detected gesture to flask backend
-    def send_gesture_to_backend(self, gesture):
-
-        try:
-            response = requests.post(
-                "http://127.0.0.1:5000/api/gesture",
-                json={"gesture": gesture}
-            )
-            if response.status_code == 200:
-                action = response.json().get("action", {})
-                self.perform_action(action)
-            else:
-                print("Error from backend:", response.json().get("message"))
-        except Exception as e:
-            print("Error communicating with backend:", e)
-
-    # command to perform the action returned by the backend
-    def perform_action(self, action):
-        if action["action"] == "open_url":
-            webbrowser.open(action["data"])  # open the url in default browser
-        elif action["action"] == "notify":
-            print(action["data"])  # display notification
-        else:
-            print("No valid action for the gesture")
-
-
-    # Insert Gesture Box in Bottom Right Corner
-    def draw_box_on_frame(self, frame):
-        # Get frame dimensions
-        height, width, _ = frame.shape
-
-        # Define box size and position (bottom-right corner)
-        box_width, box_height = 100, 100  # Adjust box size as needed
-        top_left_x = width - box_width - 10  # 10px margin from the right edge
-        top_left_y = height - box_height - 10  # 10px margin from the bottom edge
-        bottom_right_x = width - 10
-        bottom_right_y = height - 10
-
-        # Draw the rectangle
-        cv2.rectangle(frame, (top_left_x, top_left_y), (bottom_right_x, bottom_right_y), (250, 0, 0), 2)
-
-    def update_frame(self):
-        # Read a frame from the webcam
-        ret, frame = self.cap.read()
-        if not ret:
+        self.cap = cv2.VideoCapture(0)
+        if not self.cap.isOpened():
+            self.status_label.setText("Error: Cannot access webcam.")
             return
 
-        # Flip the frame horizontally for a selfie-view display
-        frame = cv2.flip(frame, 1)
+        self.timer.start(30)
+        self.status_label.setText("Camera started.")
 
-        # Convert the frame from BGR to RGB
+    def stop_camera(self):
+        """ Releases the camera when leaving the page. """
+        if self.cap is not None and self.cap.isOpened():
+            self.timer.stop()
+            self.cap.release()
+            self.cap = None
+            self.video_label.clear()
+
+    def update_frame(self):
+        """ Continuously updates the webcam feed on the GUI and detects gestures. """
+        if self.cap is None or not self.cap.isOpened():
+            self.status_label.setText("Error: Camera feed lost.")
+            return
+
+        ret, frame = self.cap.read()
+        if not ret:
+            self.status_label.setText("Error: No frame received from webcam.")
+            return
+
+        frame = cv2.flip(frame, 1)  # Flip for selfie view
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # Convert the frame to QImage
-        height, width, channel = rgb_frame.shape
-        bytes_per_line = 3 * width
-        q_img = QImage(rgb_frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
-
-        # Resize the QPixmap to fit the QLabel while maintaining aspect ratio
-        pixmap = QPixmap.fromImage(q_img).scaled(
-            self.video_label.size(),  # Use QLabel's current size
-            Qt.KeepAspectRatio,  # Maintain aspect ratio
-            Qt.SmoothTransformation  # Smooth scaling for better quality
-        )
-
-        # Set the QLabel pixmap
-        self.video_label.setPixmap(pixmap)
-
-        # Process the frame for hand tracking
+        # Process frame for hand tracking
         hand_results = self.hands.process(rgb_frame)
+        detected_gesture = None
 
-        # Initialize gesture variable
-        gesture = 'No gesture detected'
-        countdown_time = ""
-
-        # Draw hand landmarks and detect gestures
         if hand_results.multi_hand_landmarks:
             for hand_landmarks in hand_results.multi_hand_landmarks:
                 # Draw the hand landmarks on the frame
                 self.mp_drawing.draw_landmarks(
-                    frame,
+                    rgb_frame,
                     hand_landmarks,
-                    self.mp_hands.HAND_CONNECTIONS,
-                    self.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
-                    self.mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2),
+                    self.mp_hands.HAND_CONNECTIONS
                 )
 
-                # Check for gestures
-                for gesture_name, detect_function in self.gesture_map.items():
-                    if detect_function(hand_landmarks):
-                        gesture = gesture_name
-                        if self.gesture_timers[gesture_name] == 0:
-                            # Start gesture timer
-                            self.gesture_timers[gesture_name] = time.time()
-                        elif (
-                            time.time() - self.gesture_timers[gesture_name] >= 3
-                            and not self.gesture_flags[gesture_name]
-                        ):
-                            self.send_gesture_to_backend(gesture_name.lower().replace(" ", "_"))
-                            self.gesture_flags[gesture_name] = True
-                        else:
-                            elapsed_time = time.time() - self.gesture_timers[gesture_name]
-                            countdown_time = f"Action in: {3 - int(elapsed_time)}s"
-                    else:
-                        self.gesture_timers[gesture_name] = 0
-                        self.gesture_flags[gesture_name] = False
+                #Check for predefined gestures using imported functions
+                if detect_peace_sign(hand_landmarks):
+                    detected_gesture = "Peace Sign"
+                elif detect_thumbs_up(hand_landmarks):
+                    detected_gesture = "Thumbs Up"
+                elif detect_index_up(hand_landmarks):
+                    detected_gesture = "Index Up"
+                elif detect_rock_and_roll_salute(hand_landmarks):
+                    detected_gesture = "Rock and Roll Salute"
+                elif detect_fist(hand_landmarks):
+                    detected_gesture = "Fist"
+                elif detect_letter_l(hand_landmarks):
+                    detected_gesture = "L Sign"
 
+                #Check cooldown
+                current_time = time.time()
+                if self.gesture_detected and current_time - self.last_detected_time < self.COOLDOWN_TIME:
+                    continue  # Skip detection during cooldown
 
-        # Draw the gesture box in the bottom-right corner
-        self.draw_box_on_frame(frame)
+                #Start/Reset timer for detected gesture
+                if detected_gesture:
+                    if detected_gesture not in self.gesture_timers:
+                        self.gesture_timers[detected_gesture] = current_time
+                    elif current_time - self.gesture_timers[detected_gesture] >= self.REQUIRED_HOLD_TIME:
+                        self.status_label.setText(f"✅ Gesture Detected: {detected_gesture}")
+                        print(f"✅ Gesture Confirmed: {detected_gesture}")
 
-        # Display the gesture on the frame
-        #cv2.putText(frame, gesture, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                        #Activate Cooldown (prevents repeated detections)
+                        self.gesture_detected = True
+                        self.last_detected_time = current_time
 
-        # Convert the frame back to QImage to display in QLabel
-        height, width, channel = frame.shape
-        bytes_per_line = 3 * width
+                else:
+                    # Reset timers if no gesture is detected
+                    self.gesture_timers.clear()
+                    self.gesture_detected = False  # Allow new detections
 
-        # Convert the frame from BGR to RGB
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Convert to QImage
+        h, w, ch = rgb_frame.shape
+        bytes_per_line = ch * w
+        q_img = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
 
-        # Convert the frame to QImage
-        q_img = QImage(frame_rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
-
-
-        # Set the pixmap of the video_label to the new frame
+        # Display the frame on the QLabel
         self.video_label.setPixmap(QPixmap.fromImage(q_img))
 
-        if countdown_time:
-            self.countdown_label.setText(countdown_time)
-        else:
-            self.countdown_label.setText("")
-
-        # Update the status lebel with the detected gesture
-        if gesture != 'No gesture detected':
-            self.status_label.setText(f"Detected Gesture: {gesture}")
-        else:
-            self.status_label.setText("Gesture detection in progress...")
-
-    def resizeEvent(self, event):
-        """Handle window resizing and update the video feed."""
-        self.update_frame()  # Force a frame update when the window is resized
-        super().resizeEvent(event)
-
     def closeEvent(self, event):
-        # Release the video capture when closing the page
-        self.cap.release()
-        self.timer.stop()
+        """ Releases the webcam when the window is closed. """
+        self.stop_camera()
         super().closeEvent(event)
+
+
+if __name__ == "__main__":
+    app = QApplication([])
+    window = GestureCapturePage()
+    window.start_camera()
+    window.show()
+    app.exec_()
 

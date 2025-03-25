@@ -1,5 +1,4 @@
 import mediapipe as mp
-import time
 
 # Initialize MediaPipe Hands class
 mp_hands = mp.solutions.hands
