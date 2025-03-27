@@ -4,14 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5ad9c613-9f52-4acb-8806-e8a794cb4b48" name="Changes" comment="version 2.1.0">
-      <change beforePath="$PROJECT_DIR$/.idea/ARTM.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/ARTM.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="5ad9c613-9f52-4acb-8806-e8a794cb4b48" name="Changes" comment="version 3.3.1">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ARTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/ARTM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/site.db" beforeDir="false" afterPath="$PROJECT_DIR$/backend/site.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/Gesture_Capture_Page.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/Gesture_Capture_Page.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/gesture_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/gesture_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -208,7 +202,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733431436526</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="version 3.3.1">
+      <option name="closed" value="true" />
+      <created>1742937683982</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1742937683982</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -234,6 +236,7 @@
     <MESSAGE value="version 2.0.0" />
     <MESSAGE value="version 2.0.1" />
     <MESSAGE value="version 2.1.0" />
-    <option name="LAST_COMMIT_MESSAGE" value="version 2.1.0" />
+    <MESSAGE value="version 3.3.1" />
+    <option name="LAST_COMMIT_MESSAGE" value="version 3.3.1" />
   </component>
 </project>
