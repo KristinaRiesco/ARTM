@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QHBoxLayout
 )
 from PyQt5.QtCore import pyqtSignal, Qt
+from backend.services.user_service import login_user
 
 class LoginPage(QWidget):
     # Signals
@@ -62,22 +63,19 @@ class LoginPage(QWidget):
         layout.addLayout(bottom_layout)
 
     def attempt_login(self):
-        import requests
+
         email = self.email_input.text()
         password = self.password_input.text()
 
-        response = requests.post(
-            "http://127.0.0.1:5000/users/login",
-            json={"email": email, "password": password}
-        )
+        result = login_user(email, password)
 
-        if response.status_code == 200:
-            user_id = response.json().get("user_id")
-            print(f"Login successful, user ID: {user_id}")
-            self.login_success.emit(user_id)
-            QMessageBox.information(self, "Success", "Login successful!")
+        if "error" in result:
+            QMessageBox.information(self, "Error", result["error"])
         else:
-            QMessageBox.warning(self, "Error", "Invalid email or password")
+            user_id = result.get("user_id")
+            print(f"login successful, user ID: {user_id}")
+            self.login_success.emit(user_id)
+            QMessageBox.warning(self, "Success", "Login Successful")
 
     def handle_register(self):
         self.register_requested.emit()

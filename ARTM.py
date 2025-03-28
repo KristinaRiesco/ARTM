@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (
     QSystemTrayIcon, QMenu, QAction, QApplication, QMessageBox,
     QVBoxLayout, QStackedWidget, QPushButton, QHBoxLayout, QWidget, QLabel, QFrame
 )
+from backend.services.user_service import get_profile
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'pages'))
 
@@ -16,6 +17,7 @@ from pages.Profile_Page import ProfilePage
 from pages.Settings_Page import SettingsPage
 from pages.Login_Page import LoginPage
 from pages.Register_Page import RegisterPage
+
 
 
 class BasicFrontendApp(QtWidgets.QMainWindow):
@@ -142,16 +144,15 @@ class BasicFrontendApp(QtWidgets.QMainWindow):
     # ------------------- METHODS -------------------
 
     def handle_login_success(self, user_id):
-        """Handles the login success by fetching user data and updating the UI."""
-        self.user_id = user_id
-        response = requests.get(f"http://127.0.0.1:5000/users/profile/{user_id}")
 
-        if response.status_code == 200:
-            user_data = response.json()
-            self.username = user_data.get("username", "Unknown User")
-            QMessageBox.information(self, "Success", "Login successful!")
-        else:
-            QtWidgets.QMessageBox.warning(self, "Error", "Failed to fetch user data")
+        user_data = get_profile(user_id)
+
+        if "error" in user_data:
+            QtWidgets.QMessageBox.warning(self, "Error", user_data["error"])
+            return
+
+        self.username = user_data.get("username", "Unknown User")
+        QMessageBox.information(self, "Success", "Login successful!")
 
         # Show top bar & sidebar after login
         self.top_bar.setVisible(True)

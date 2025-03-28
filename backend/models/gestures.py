@@ -1,4 +1,4 @@
-from backend import db
+from backend.core.extensions import db
 from sqlalchemy import Column, Text, Integer, String, TIMESTAMP, ForeignKey
 from datetime import datetime
 
