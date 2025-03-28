@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QHBoxLayout
 )
 from PyQt5.QtCore import pyqtSignal, Qt
+from backend.services.user_service import register_user
 
 class RegisterPage(QWidget):
     back_to_login = pyqtSignal()
@@ -67,7 +68,7 @@ class RegisterPage(QWidget):
         layout.addLayout(bottom_layout)
 
     def attempt_register(self):
-        import requests
+
         username = self.username_input.text()
         email = self.email_input.text()
         password = self.password_input.text()
@@ -76,15 +77,12 @@ class RegisterPage(QWidget):
             QMessageBox(self, "Error", "All fields are required!")
             return
 
-        response = requests.post(
-            "http://127.0.0.1:5000/users/register",
-            json={"username": username, "email": email, "password": password}
-        )
+        result = register_user(username, email, password)
 
-        if response.status_code == 201:
-            QMessageBox.information(self, "Success", "Registration successful!")
+        if "error" in result:
+            QMessageBox.warning(self, "Error", result["error"])
         else:
-            QMessageBox.warning(self, "Error", "Registration failed.")
+            QMessageBox.information(self, "Success", result["message"])
 
     def go_back_to_login(self):
         self.back_to_login.emit()
