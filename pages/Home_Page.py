@@ -41,6 +41,11 @@ class DropdownRow(QWidget):
         parent_layout.removeWidget(self)
         self.deleteLater()
 
+    def get_selections(self):
+        gesture = self.gesture_dropdown.currentText()
+        macro = self.macro_dropdown.currentText()
+        return gesture, macro
+
 
 class HomePage(QWidget):
     def __init__(self, parent=None):
@@ -71,3 +76,23 @@ class HomePage(QWidget):
         # Create a new row (DropdownRow widget) and add it to the container
         row = DropdownRow()
         self.dropdown_container.addWidget(row)
+
+    def handle_detected_gesture(self, detected_gesture):
+        for i in range(self.dropdown_container.count()):
+            row = self.dropdown_container.itemAt(i).widget()
+            gesture, macro = row.get_selections()
+            if gesture == detected_gesture:
+                print(f"Gesture Detected: {gesture} -> {macro}")
+                self.execute_macro(macro)
+                break
+
+    def execute_macro(self, macro):
+        import webbrowser, os
+        if macro == "Open Browser":
+            webbrowser.open("https://www.google.com")
+        elif macro == "Open Editor":
+            os.system("notepad.exe")
+        elif macro == "Volume Up":
+            print("Volume Up")
+        elif macro == "Volume Down":
+            print("Volume Down")

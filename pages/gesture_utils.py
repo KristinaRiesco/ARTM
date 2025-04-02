@@ -53,24 +53,78 @@ def detect_peace_sign(hand_landmarks):
 
     return index_extended and middle_extended and ring_curled and pinky_curled
 
-
+""" There are issues with this thumb detection.
 # Function to detect thumbs up gesture
 def detect_thumbs_up(hand_landmarks):
+    wrist = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST]
     thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
     thumb_ip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
+    thumb_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP]
 
     index_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
     middle_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
     ring_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
     pinky_finger_tip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
 
-    thumb_extended = thumb_tip.y < thumb_ip.y
-    index_curled = index_finger_tip.y > hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP].y
-    middle_curled = middle_finger_tip.y > hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_PIP].y
-    ring_curled = ring_finger_tip.y > hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_PIP].y
-    pinky_curled = pinky_finger_tip.y > hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_PIP].y
+    index_pip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP]
+    middle_pip = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_PIP]
+    ring_pip = hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_PIP]
+    pinky_pip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_PIP]
+
+    thumb_up = thumb_tip.y < wrist.y and abs(thumb_tip.z - wrist.z) > 0.02
+
+    #thumb_extended = thumb_tip.y < thumb_mcp.y
+    index_curled = index_finger_tip.y > index_pip.y
+    middle_curled = middle_finger_tip.y > middle_pip.y
+    ring_curled = ring_finger_tip.y > ring_pip.y
+    pinky_curled = pinky_finger_tip.y > pinky_pip.y
+
+    return thumb_up and index_curled and middle_curled and ring_curled and pinky_curled
+"""
+
+# this thumb detection below is trying to fix the thumbs up detection issue
+import math
+
+# calculates the distance between two hand landmarks (i.e. thumb_tip and thumb_mcp)
+def distance(a, b):
+    return math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2)
+
+def detect_thumbs_up(hand_landmarks):
+    wrist = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST]
+    thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+    index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+    middle_tip = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
+    ring_tip = hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
+    pinky_tip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
+
+    index_pip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_PIP]
+    middle_pip = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_PIP]
+    ring_pip = hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_PIP]
+    pinky_pip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_PIP]
+
+    # 1. Thumb is extended away from wrist more than all fingers
+    thumb_dist = distance(thumb_tip, wrist)
+    index_dist = distance(index_tip, wrist)
+    middle_dist = distance(middle_tip, wrist)
+    ring_dist = distance(ring_tip, wrist)
+    pinky_dist = distance(pinky_tip, wrist)
+
+    # sees if thumb is extended further than any of the other digits
+    thumb_extended = (
+        thumb_dist > index_dist and
+        thumb_dist > middle_dist and
+        thumb_dist > ring_dist and
+        thumb_dist > pinky_dist
+    )
+
+    # 2. All other fingers are curled
+    index_curled = index_tip.y > index_pip.y
+    middle_curled = middle_tip.y > middle_pip.y
+    ring_curled = ring_tip.y > ring_pip.y
+    pinky_curled = pinky_tip.y > pinky_pip.y
 
     return thumb_extended and index_curled and middle_curled and ring_curled and pinky_curled
+
 
 
 # Function to detect index upwards gesture
