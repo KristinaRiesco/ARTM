@@ -17,8 +17,9 @@ from gesture_utils import (
 
 
 class GestureCapturePage(QWidget):
-    def __init__(self):
+    def __init__(self, home_page=None):
         super().__init__()
+        self.home_page = home_page
 
         # Set up the page layout
         self.layout = QVBoxLayout()
@@ -39,6 +40,10 @@ class GestureCapturePage(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
 
+        self.held_gesture = None
+        self.held_gesture_start_time = None
+
+
         # Initialize MediaPipe Hands class
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
@@ -52,12 +57,21 @@ class GestureCapturePage(QWidget):
 
         # Gesture Timers (to confirm a gesture after 1.5 seconds)
         self.gesture_timers = {}
-        self.REQUIRED_HOLD_TIME = 1.5  # Time (seconds) a gesture must be held
+        self.REQUIRED_HOLD_TIME = 3  # Time (seconds) a gesture must be held
         self.COOLDOWN_TIME = 3  # Time (seconds) before detecting another gesture
 
         #Flags to prevent repeated detections
         self.gesture_detected = False
         self.last_detected_time = 0
+
+        self.current_gesture_label = QLabel("Current Gesture: None")
+        self.current_gesture_label.setStyleSheet("font-size: 16px; font-weight: bold; color: blue;")
+        self.layout.addWidget(self.current_gesture_label)
+
+        self.countdown_label = QLabel("")
+        self.countdown_label.setStyleSheet("font-size: 24px; font-weight: bold; color: red;")
+        self.countdown_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.countdown_label)
 
     def start_camera(self):
         """ Initializes and starts the camera when the page is shown. """
@@ -79,6 +93,8 @@ class GestureCapturePage(QWidget):
             self.cap.release()
             self.cap = None
             self.video_label.clear()
+
+
 
     def update_frame(self):
         """ Continuously updates the webcam feed on the GUI and detects gestures. """
@@ -128,20 +144,33 @@ class GestureCapturePage(QWidget):
 
                 #Start/Reset timer for detected gesture
                 if detected_gesture:
-                    if detected_gesture not in self.gesture_timers:
-                        self.gesture_timers[detected_gesture] = current_time
-                    elif current_time - self.gesture_timers[detected_gesture] >= self.REQUIRED_HOLD_TIME:
-                        self.status_label.setText(f"✅ Gesture Detected: {detected_gesture}")
-                        print(f"✅ Gesture Confirmed: {detected_gesture}")
+                    self.current_gesture_label.setText(f"Current Gesture: {detected_gesture}")
 
-                        #Activate Cooldown (prevents repeated detections)
-                        self.gesture_detected = True
-                        self.last_detected_time = current_time
+                    if self.held_gesture != detected_gesture:
+                        self.held_gesture = detected_gesture
+                        self.held_gesture_start_time = current_time
+                        self.countdown_label.setText("Detecting...")
+                    else:
+                        held_duration = current_time - self.held_gesture_start_time
+                        self.countdown_label.setText(f"Holding: {int(held_duration)}s")
 
-                else:
-                    # Reset timers if no gesture is detected
-                    self.gesture_timers.clear()
-                    self.gesture_detected = False  # Allow new detections
+                        if held_duration >= self.REQUIRED_HOLD_TIME:
+                            self.status_label.setText(f"Gesture Confirmed: {detected_gesture}")
+                            print(f"Triggering macro for: {detected_gesture}")
+                            if self.home_page:
+                                self.home_page.handle_detected_gesture(detected_gesture)
+
+                            #reset tracking for time and gesture
+                            self.held_gesture = None
+                            self.held_gesture_start_time = None
+                            self.countdown_label.setText("")
+
+                #else:
+                #    self.current_gesture_label.setText("Current Gesture: None")
+                #    self.countdown_label.setText("")
+                #    self.held_gesture = None
+                #    self.held_gesture_start_time = None
+
 
         # Convert to QImage
         h, w, ch = rgb_frame.shape
@@ -150,6 +179,12 @@ class GestureCapturePage(QWidget):
 
         # Display the frame on the QLabel
         self.video_label.setPixmap(QPixmap.fromImage(q_img))
+
+        if detected_gesture is None:
+            self.current_gesture_label.setText("Current Gesture: None")
+            self.countdown_label.setText("")
+            self.held_gesture = None
+            self.held_gesture_start_time = None
 
     def closeEvent(self, event):
         """ Releases the webcam when the window is closed. """

@@ -100,7 +100,7 @@ class BasicFrontendApp(QtWidgets.QMainWindow):
         self.home_page = HomePage()
         self.stacked_widget.addWidget(self.home_page)  # index 0
 
-        self.gesture_capture_page = GestureCapturePage()
+        self.gesture_capture_page = GestureCapturePage(home_page=self.home_page)
         self.stacked_widget.addWidget(self.gesture_capture_page)  # index 1
 
         self.gesture_creation_page = GestureCreationPage()
