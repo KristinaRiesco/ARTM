@@ -105,14 +105,14 @@ This will launch the application, initialize the SQLite database, and open the l
 
 ## Contributors
 
-Kristina Riesco – Lead Developer
+Kristina Riesco – Backend Developer
 - Designed and implemented the local Python backend architecture
 - Built and integrated the SQLite database using SQLAlchemy ORM
 - Developed backend services for user authentication and gesture-to-action mapping
 - Integrated gesture recognition with system-level responses
 - Contributed to frontend development and predefined gesture creation
 
-Kyle McGuinness – Frontend Developer
+Kyle McGuinness – Frontend Developer + Project Manager
 - Designed the PyQt5 user interface and layout
 - Implemented page navigation and user interaction flow
 - Developed login, registration, and settings pages
